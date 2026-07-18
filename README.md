@@ -5,6 +5,7 @@ A minimal, high-performance visual design canvas built on a retained-mode graphi
 The UI is intentionally quiet — light gray chrome, no grid, no decoration. The canvas is the product. Underneath is a Rust → WebAssembly → WebGPU engine designed to stay responsive as scene complexity grows.
 
 ---
+<img width="1911" height="941" alt="image" src="https://github.com/user-attachments/assets/3aa2cc3a-6ef6-48f1-b5e6-3fb06faf2f61" />
 
 ## Features
 
