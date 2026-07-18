@@ -1,0 +1,9 @@
+[package]
+name = "engine-input"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+engine-core = { workspace = true }
+serde = { workspace = true }

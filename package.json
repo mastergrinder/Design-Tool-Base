@@ -1,0 +1,23 @@
+{
+  "name": "webgpu-canvas",
+  "private": true,
+  "version": "0.1.0",
+  "description": "High-performance WebGPU design canvas (Rust/WASM engine + React editor)",
+  "license": "MIT",
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "build:wasm": "wasm-pack build engine/wasm --target web --out-dir ../../apps/editor/src/wasm-pkg --out-name engine",
+    "dev": "pnpm run build:wasm && pnpm --filter @webgpu-canvas/editor dev",
+    "build": "pnpm run build:wasm && pnpm --filter @webgpu-canvas/editor build",
+    "preview": "pnpm --filter @webgpu-canvas/editor preview",
+    "test": "pnpm run test:engine",
+    "test:engine": "cargo test --manifest-path engine/Cargo.toml -p engine-core -p engine-scene -p engine-selection -p engine-input",
+    "typecheck": "pnpm --filter @webgpu-canvas/editor exec tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

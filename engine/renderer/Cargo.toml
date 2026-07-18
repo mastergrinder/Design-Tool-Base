@@ -1,0 +1,13 @@
+[package]
+name = "engine-renderer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+engine-core = { workspace = true }
+engine-scene = { workspace = true }
+bytemuck = { workspace = true }
+glam = { workspace = true }
+wgpu = { workspace = true }
+thiserror = { workspace = true }

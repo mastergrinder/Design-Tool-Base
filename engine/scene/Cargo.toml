@@ -1,0 +1,10 @@
+[package]
+name = "engine-scene"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+engine-core = { workspace = true }
+glam = { workspace = true }
+serde = { workspace = true }

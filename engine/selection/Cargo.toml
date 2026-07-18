@@ -1,0 +1,10 @@
+[package]
+name = "engine-selection"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+engine-core = { workspace = true }
+engine-scene = { workspace = true }
+glam = { workspace = true }

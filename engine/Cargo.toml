@@ -1,0 +1,35 @@
+[workspace]
+resolver = "2"
+members = [
+  "core",
+  "scene",
+  "renderer",
+  "input",
+  "selection",
+  "wasm",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["WebGPU Canvas Contributors"]
+description = "High-performance WebGPU design canvas engine"
+
+[workspace.dependencies]
+engine-core = { path = "core" }
+engine-scene = { path = "scene" }
+engine-renderer = { path = "renderer" }
+engine-input = { path = "input" }
+engine-selection = { path = "selection" }
+bytemuck = { version = "1.22", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+wgpu = { version = "24.0", features = ["webgl"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = "0.3"
+console_error_panic_hook = "0.1"
+glam = { version = "0.29", features = ["bytemuck", "serde"] }
+thiserror = "2.0"
