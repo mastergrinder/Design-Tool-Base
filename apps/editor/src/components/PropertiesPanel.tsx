@@ -1,5 +1,5 @@
 import type { UiShaderInfo, UiSnapshot } from "@webgpu-canvas/protocol";
-import { ShaderIcon } from "./Icons";
+import { LayerTypeIcon, PropertiesHeaderIcon, ShaderIcon } from "./Icons";
 
 interface Props {
   snapshot: UiSnapshot | null;
@@ -40,7 +40,7 @@ function ShaderGallery({
         <ShaderIcon size={14} />
         <span>Shaders</span>
       </div>
-      <p className="shaders__hint">Click a shader to add it to the canvas.</p>
+      <p className="shaders__hint">Click to place a live GPU shader on the canvas.</p>
       {categories.map((cat) => (
         <div key={cat} className="shaders__group">
           <div className="props__label">{cat}</div>
@@ -82,7 +82,12 @@ export function PropertiesPanel({
   if (!node) {
     return (
       <aside className="panel panel--right">
-        <div className="panel__header">Properties</div>
+        <div className="panel__header">
+          <span className="panel__header-icon">
+            <PropertiesHeaderIcon size={12} />
+          </span>
+          Properties
+        </div>
         <div className="panel__body panel__body--props">
           <ShaderGallery shaders={shaders} onAdd={onAddShader} />
         </div>
@@ -92,75 +97,86 @@ export function PropertiesPanel({
 
   const isShader = node.layer_type === "Shader";
   const isFrame = node.layer_type === "Frame";
+  const opacityPct = Math.round(node.opacity * 100);
 
   return (
     <aside className="panel panel--right">
-      <div className="panel__header">Properties</div>
+      <div className="panel__header">
+        <span className="panel__header-icon">
+          <PropertiesHeaderIcon size={12} />
+        </span>
+        Properties
+      </div>
       <div className="props">
         <div className="props__title">
+          <LayerTypeIcon type={node.layer_type} size={15} />
           {isShader ? node.shader_name || "Shader" : node.layer_type}
         </div>
 
         <div className="props__group">
           <div className="props__label">Position</div>
-          <label className="props__row">
-            <span>X</span>
-            <input
-              type="number"
-              value={Math.round(node.x * 100) / 100}
-              onChange={(e) => onSetProperty("x", Number(e.target.value))}
-            />
-          </label>
-          <label className="props__row">
-            <span>Y</span>
-            <input
-              type="number"
-              value={Math.round(node.y * 100) / 100}
-              onChange={(e) => onSetProperty("y", Number(e.target.value))}
-            />
-          </label>
+          <div className="props__pair">
+            <label className="props__field">
+              <span>X</span>
+              <input
+                type="number"
+                value={Math.round(node.x * 100) / 100}
+                onChange={(e) => onSetProperty("x", Number(e.target.value))}
+              />
+            </label>
+            <label className="props__field">
+              <span>Y</span>
+              <input
+                type="number"
+                value={Math.round(node.y * 100) / 100}
+                onChange={(e) => onSetProperty("y", Number(e.target.value))}
+              />
+            </label>
+          </div>
         </div>
 
         <div className="props__group">
           <div className="props__label">Size</div>
-          <label className="props__row">
-            <span>W</span>
-            <input
-              type="number"
-              min={1}
-              value={Math.round(node.width * 100) / 100}
-              onChange={(e) => onSetProperty("width", Number(e.target.value))}
-            />
-          </label>
-          <label className="props__row">
-            <span>H</span>
-            <input
-              type="number"
-              min={1}
-              value={Math.round(node.height * 100) / 100}
-              onChange={(e) => onSetProperty("height", Number(e.target.value))}
-            />
-          </label>
+          <div className="props__pair">
+            <label className="props__field">
+              <span>W</span>
+              <input
+                type="number"
+                min={1}
+                value={Math.round(node.width * 100) / 100}
+                onChange={(e) => onSetProperty("width", Number(e.target.value))}
+              />
+            </label>
+            <label className="props__field">
+              <span>H</span>
+              <input
+                type="number"
+                min={1}
+                value={Math.round(node.height * 100) / 100}
+                onChange={(e) => onSetProperty("height", Number(e.target.value))}
+              />
+            </label>
+          </div>
         </div>
 
         {!isShader && (
           <div className="props__group">
             <div className="props__label">Fill</div>
-            <label className="props__row">
-              <span />
+            <label className="props__swatch">
               <input
                 type="color"
                 value={rgbaToHex(node.fill)}
                 onChange={(e) => onSetFill(hexToNumber(e.target.value))}
               />
+              <span>{rgbaToHex(node.fill).toUpperCase()}</span>
             </label>
           </div>
         )}
 
         {!isShader && !isFrame && (
           <div className="props__group">
-            <div className="props__label">Radius</div>
-            <label className="props__row">
+            <div className="props__label">Corner radius</div>
+            <label className="props__field props__field--solo">
               <span>R</span>
               <input
                 type="number"
@@ -173,19 +189,20 @@ export function PropertiesPanel({
         )}
 
         <div className="props__group">
-          <div className="props__label">Opacity</div>
-          <label className="props__row">
-            <span>%</span>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={Math.round(node.opacity * 100)}
-              onChange={(e) =>
-                onSetProperty("opacity", Number(e.target.value) / 100)
-              }
-            />
-          </label>
+          <div className="props__label">
+            Opacity
+            <span className="props__label-value">{opacityPct}%</span>
+          </div>
+          <input
+            className="props__slider"
+            type="range"
+            min={0}
+            max={100}
+            value={opacityPct}
+            onChange={(e) =>
+              onSetProperty("opacity", Number(e.target.value) / 100)
+            }
+          />
         </div>
 
         {isShader && (

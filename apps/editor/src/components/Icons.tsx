@@ -1,72 +1,103 @@
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import {
+  Cursor01Icon,
+  EyeIcon,
+  EyeOffIcon,
+  FitToScreenIcon,
+  FrameIcon as HugeFrameIcon,
+  HandIcon,
+  Layers01Icon,
+  LockIcon,
+  MinusSignIcon,
+  PlusSignIcon,
+  SlidersHorizontalIcon,
+  SparklesIcon,
+  SquareIcon,
+  SquareUnlock01Icon,
+  ZoomIcon,
+} from "@hugeicons/core-free-icons";
+
+const STROKE = 1.55;
+
 interface IconProps {
   size?: number;
   className?: string;
 }
 
-export function RectangleIcon({ size = 14, className }: IconProps) {
+function Icon({
+  icon,
+  size = 14,
+  className,
+}: IconProps & { icon: IconSvgElement }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
-      fill="none"
+    <HugeiconsIcon
+      icon={icon}
+      size={size}
+      strokeWidth={STROKE}
       className={className}
-      aria-hidden
-    >
-      <rect
-        x="2.5"
-        y="3.5"
-        width="11"
-        height="9"
-        rx="1"
-        stroke="currentColor"
-        strokeWidth="1.25"
-      />
-    </svg>
+      color="currentColor"
+    />
   );
 }
 
-export function FrameIcon({ size = 14, className }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <path
-        d="M3 5.5h1.5V3h2.5M9 3h2.5v2.5H14M14 9v2.5h-2.5V14M7 14H4.5v-2.5H3"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="square"
-      />
-      <rect x="5.5" y="5.5" width="5" height="5" stroke="currentColor" strokeWidth="1.25" />
-    </svg>
-  );
+export function RectangleIcon(props: IconProps) {
+  return <Icon icon={SquareIcon} {...props} />;
 }
 
-export function ShaderIcon({ size = 14, className }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <circle cx="8" cy="8" r="5.25" stroke="currentColor" strokeWidth="1.25" />
-      <path
-        d="M5 8.5c1.2-2 2.2-3 3-3s1.8 1 3 3"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-      />
-      <circle cx="8" cy="6.5" r="1" fill="currentColor" />
-    </svg>
-  );
+export function FrameIcon(props: IconProps) {
+  return <Icon icon={HugeFrameIcon} {...props} />;
+}
+
+export function ShaderIcon(props: IconProps) {
+  return <Icon icon={SparklesIcon} {...props} />;
+}
+
+export function EyeOpenIcon(props: IconProps) {
+  return <Icon icon={EyeIcon} {...props} />;
+}
+
+export function EyeClosedIcon(props: IconProps) {
+  return <Icon icon={EyeOffIcon} {...props} />;
+}
+
+export function LockedIcon(props: IconProps) {
+  return <Icon icon={LockIcon} {...props} />;
+}
+
+export function UnlockedIcon(props: IconProps) {
+  return <Icon icon={SquareUnlock01Icon} {...props} />;
+}
+
+export function ZoomMetaIcon(props: IconProps) {
+  return <Icon icon={ZoomIcon} {...props} />;
+}
+
+export function ZoomInIcon(props: IconProps) {
+  return <Icon icon={PlusSignIcon} {...props} />;
+}
+
+export function ZoomOutIcon(props: IconProps) {
+  return <Icon icon={MinusSignIcon} {...props} />;
+}
+
+export function FitViewIcon(props: IconProps) {
+  return <Icon icon={FitToScreenIcon} {...props} />;
+}
+
+export function HandToolIcon(props: IconProps) {
+  return <Icon icon={HandIcon} {...props} />;
+}
+
+export function SelectToolIcon(props: IconProps) {
+  return <Icon icon={Cursor01Icon} {...props} />;
+}
+
+export function LayersHeaderIcon(props: IconProps) {
+  return <Icon icon={Layers01Icon} {...props} />;
+}
+
+export function PropertiesHeaderIcon(props: IconProps) {
+  return <Icon icon={SlidersHorizontalIcon} {...props} />;
 }
 
 export function LayerTypeIcon({

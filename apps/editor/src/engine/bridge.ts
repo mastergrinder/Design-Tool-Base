@@ -11,6 +11,8 @@ export interface EngineHandle {
   set_locked(id: number, locked: boolean): void;
   set_selected_property(key: string, value: number): void;
   set_selected_fill(hex: number): void;
+  zoom_by(factor: number): void;
+  reset_camera(): void;
   resize(cssW: number, cssH: number, pixelW: number, pixelH: number): void;
   frame(input: unknown): Promise<UiSnapshot> | UiSnapshot;
   get_ui_snapshot(): UiSnapshot;

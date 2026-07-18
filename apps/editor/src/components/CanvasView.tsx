@@ -1,19 +1,39 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { emptyFrameInput, type FrameInput, type UiSnapshot } from "@webgpu-canvas/protocol";
 import { loadEngine, type EngineHandle } from "../engine/bridge";
+import type { EditorTool } from "./Toolbar";
 
 interface Props {
+  tool: EditorTool;
   onReady: (engine: EngineHandle) => void;
   onSnapshot: (snap: UiSnapshot) => void;
   onError: (message: string) => void;
   error: string | null;
 }
 
-export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
+export function CanvasView({ tool, onReady, onSnapshot, onError, error }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<EngineHandle | null>(null);
   const inputRef = useRef<FrameInput>(emptyFrameInput());
   const keysRef = useRef({ space: false, ctrl: false, shift: false, meta: false });
+  const toolRef = useRef<EditorTool>(tool);
+  const [showHint, setShowHint] = useState(true);
+
+  useEffect(() => {
+    toolRef.current = tool;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (tool === "pan" || keysRef.current.space) {
+      canvas.style.cursor = "grab";
+    } else {
+      canvas.style.cursor = "default";
+    }
+  }, [tool]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setShowHint(false), 4500);
+    return () => window.clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -26,6 +46,8 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
     let releasedThisFrame = false;
     let button = 0;
     let wheelDelta = 0;
+
+    const isPanActive = () => toolRef.current === "pan" || keysRef.current.space;
 
     const syncSize = () => {
       const parent = canvas.parentElement;
@@ -52,6 +74,7 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      setShowHint(false);
       canvas.setPointerCapture(e.pointerId);
       const p = pointerPos(e);
       pointerDown = true;
@@ -59,6 +82,9 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
       button = e.button;
       inputRef.current.pointer_x = p.x;
       inputRef.current.pointer_y = p.y;
+      if (isPanActive() || e.button === 1) {
+        canvas.style.cursor = "grabbing";
+      }
       e.preventDefault();
     };
 
@@ -74,6 +100,7 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
       releasedThisFrame = true;
       inputRef.current.pointer_x = p.x;
       inputRef.current.pointer_y = p.y;
+      canvas.style.cursor = isPanActive() ? "grab" : "default";
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -86,6 +113,7 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         keysRef.current.space = true;
+        canvas.style.cursor = pointerDown ? "grabbing" : "grab";
         e.preventDefault();
       }
       keysRef.current.ctrl = e.ctrlKey;
@@ -96,6 +124,7 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         keysRef.current.space = false;
+        canvas.style.cursor = toolRef.current === "pan" ? "grab" : "default";
       }
       keysRef.current.ctrl = e.ctrlKey;
       keysRef.current.shift = e.shiftKey;
@@ -105,6 +134,7 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
     const onBlur = () => {
       keysRef.current = { space: false, ctrl: false, shift: false, meta: false };
       pointerDown = false;
+      canvas.style.cursor = toolRef.current === "pan" ? "grab" : "default";
     };
 
     canvas.addEventListener("pointerdown", onPointerDown);
@@ -155,7 +185,8 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
             wheel_delta_y: wheelDelta,
             ctrl: keysRef.current.ctrl,
             shift: keysRef.current.shift,
-            space: keysRef.current.space,
+            // Hand tool uses the same pan path as Space.
+            space: isPanActive(),
             meta: keysRef.current.meta,
           };
           pressedThisFrame = false;
@@ -189,9 +220,19 @@ export function CanvasView({ onReady, onSnapshot, onError, error }: Props) {
   }, [onReady, onSnapshot, onError]);
 
   return (
-    <div className="canvas-host">
+    <div
+      className={`canvas-host${showHint && !error ? " is-idle" : ""}${
+        tool === "pan" ? " is-panning" : ""
+      }`}
+    >
       <canvas ref={canvasRef} tabIndex={0} />
-      {error ? <div className="canvas-host__error">{error}</div> : null}
+      {error ? (
+        <div className="canvas-host__error">{error}</div>
+      ) : showHint ? (
+        <div className="canvas-host__hint">
+          Hand tool or Space to pan · Ctrl + scroll to zoom
+        </div>
+      ) : null}
     </div>
   );
 }

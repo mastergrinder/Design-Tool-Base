@@ -25,6 +25,9 @@ pub struct Renderer {
     pub rect_pipeline: RectPipeline,
     pub shader_pipelines: ShaderPipelines,
     pub clear_color: wgpu::Color,
+    sample_count: u32,
+    msaa_texture: Option<wgpu::Texture>,
+    msaa_view: Option<wgpu::TextureView>,
     width: u32,
     height: u32,
 }
@@ -67,6 +70,16 @@ impl Renderer {
             .find(|f| f.is_srgb())
             .unwrap_or(caps.formats[0]);
 
+        let sample_count = if adapter
+            .get_texture_format_features(format)
+            .flags
+            .contains(wgpu::TextureFormatFeatureFlags::MULTISAMPLE_X4)
+        {
+            4
+        } else {
+            1
+        };
+
         let width = width.max(1);
         let height = height.max(1);
 
@@ -82,9 +95,17 @@ impl Renderer {
         };
         surface.configure(&device, &config);
 
-        let rect_pipeline = RectPipeline::new(&device, format);
-        let shader_pipelines = ShaderPipelines::new(&device, format);
+        let rect_pipeline = RectPipeline::new(&device, format, sample_count);
+        let shader_pipelines = ShaderPipelines::new(&device, format, sample_count);
 
+        let (msaa_texture, msaa_view) = if sample_count > 1 {
+            let (tex, view) = create_msaa(&device, format, width, height, sample_count);
+            (Some(tex), Some(view))
+        } else {
+            (None, None)
+        };
+
+        // Warm paper desk gray (#d2d2ce)
         Ok(Self {
             device,
             queue,
@@ -93,11 +114,14 @@ impl Renderer {
             rect_pipeline,
             shader_pipelines,
             clear_color: wgpu::Color {
-                r: 200.0 / 255.0,
-                g: 200.0 / 255.0,
-                b: 200.0 / 255.0,
+                r: 212.0 / 255.0,
+                g: 212.0 / 255.0,
+                b: 208.0 / 255.0,
                 a: 1.0,
             },
+            sample_count,
+            msaa_texture,
+            msaa_view,
             width,
             height,
         })
@@ -114,6 +138,17 @@ impl Renderer {
         self.config.width = width;
         self.config.height = height;
         self.surface.configure(&self.device, &self.config);
+        if self.sample_count > 1 {
+            let (tex, view) = create_msaa(
+                &self.device,
+                self.config.format,
+                width,
+                height,
+                self.sample_count,
+            );
+            self.msaa_texture = Some(tex);
+            self.msaa_view = Some(view);
+        }
     }
 
     pub fn shader_count(&self) -> usize {
@@ -145,10 +180,7 @@ impl Renderer {
         );
 
         enum DrawCmd {
-            Rect {
-                instance: u32,
-                selected: bool,
-            },
+            Rect { instance: u32, selected: bool },
             Shader {
                 shader_id: u32,
                 slot: u32,
@@ -214,7 +246,6 @@ impl Renderer {
         self.rect_pipeline
             .upload_instances(&self.device, &self.queue, &rect_instances);
 
-        // Pack shader draw uniforms with 256-byte alignment for dynamic offsets.
         if !shader_draws.is_empty() {
             let mut bytes = vec![0u8; shader_draws.len() * DRAW_UNIFORM_ALIGN as usize];
             for (i, draw) in shader_draws.iter().enumerate() {
@@ -229,7 +260,7 @@ impl Renderer {
         }
 
         let frame = self.surface.get_current_texture()?;
-        let view_tex = frame
+        let resolve_view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -240,14 +271,24 @@ impl Renderer {
             });
 
         {
+            let (attach_view, resolve_target) = if let Some(msaa) = self.msaa_view.as_ref() {
+                (msaa, Some(&resolve_view))
+            } else {
+                (&resolve_view, None)
+            };
+
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("main_pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view_tex,
-                    resolve_target: None,
+                    view: attach_view,
+                    resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(self.clear_color),
-                        store: wgpu::StoreOp::Store,
+                        store: if resolve_target.is_some() {
+                            wgpu::StoreOp::Discard
+                        } else {
+                            wgpu::StoreOp::Store
+                        },
                     },
                 })],
                 depth_stencil_attachment: None,
@@ -295,4 +336,29 @@ impl Renderer {
         frame.present();
         Ok(())
     }
+}
+
+fn create_msaa(
+    device: &wgpu::Device,
+    format: wgpu::TextureFormat,
+    width: u32,
+    height: u32,
+    sample_count: u32,
+) -> (wgpu::Texture, wgpu::TextureView) {
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("msaa_color"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    });
+    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    (texture, view)
 }

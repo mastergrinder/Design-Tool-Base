@@ -117,6 +117,10 @@ impl Engine {
         self.renderer = Some(renderer);
 
         self.create_rectangle(-200.0, -120.0, 400.0, 240.0, 0xFFFFFF);
+        // Soft default corner radius for Paper-like starter shape.
+        if let Some(id) = self.selection.primary() {
+            self.scene.set_radius(id, 8.0);
+        }
         self.selection.clear();
         self.needs_render = true;
         self.ui_dirty = true;
@@ -182,6 +186,21 @@ impl Engine {
     #[wasm_bindgen]
     pub fn clear_selection(&mut self) {
         self.selection.clear();
+        self.ui_dirty = true;
+        self.needs_render = true;
+    }
+
+    #[wasm_bindgen]
+    pub fn zoom_by(&mut self, factor: f32) {
+        let factor = factor.clamp(0.05, 20.0);
+        self.camera.zoom_by(factor);
+        self.ui_dirty = true;
+        self.needs_render = true;
+    }
+
+    #[wasm_bindgen]
+    pub fn reset_camera(&mut self) {
+        self.camera.reset_view();
         self.ui_dirty = true;
         self.needs_render = true;
     }

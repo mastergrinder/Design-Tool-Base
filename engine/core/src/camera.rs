@@ -38,6 +38,18 @@ impl Camera {
         self.position -= delta_screen / self.zoom;
     }
 
+    /// Zoom toward the viewport center by a multiplicative factor.
+    pub fn zoom_by(&mut self, factor: f32) {
+        let center = self.viewport_size * 0.5;
+        self.zoom_at(center, factor);
+    }
+
+    /// Reset pan and zoom to the default view.
+    pub fn reset_view(&mut self) {
+        self.position = Vec2::ZERO;
+        self.zoom = 1.0;
+    }
+
     /// Zoom centered on a screen-space cursor so the world point under the cursor stays fixed.
     pub fn zoom_at(&mut self, cursor_screen: Vec2, factor: f32) {
         let world_before = self.screen_to_world(cursor_screen);

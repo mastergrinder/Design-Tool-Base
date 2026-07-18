@@ -3,7 +3,7 @@ import type { UiSnapshot } from "@webgpu-canvas/protocol";
 import { CanvasView } from "./components/CanvasView";
 import { LayersPanel } from "./components/LayersPanel";
 import { PropertiesPanel } from "./components/PropertiesPanel";
-import { Toolbar } from "./components/Toolbar";
+import { Toolbar, type EditorTool } from "./components/Toolbar";
 import type { EngineHandle } from "./engine/bridge";
 
 export function App() {
@@ -12,6 +12,7 @@ export function App() {
   const [snapshot, setSnapshot] = useState<UiSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [tool, setTool] = useState<EditorTool>("select");
 
   const onSnapshot = useCallback((snap: UiSnapshot) => {
     layerCountRef.current = snap.layers.length;
@@ -55,8 +56,34 @@ export function App() {
     engine.create_shader_layer(shaderId, x, y, 360, 240);
   }, []);
 
+  const zoomIn = useCallback(() => {
+    engineRef.current?.zoom_by(1.15);
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    engineRef.current?.zoom_by(1 / 1.15);
+  }, []);
+
+  const resetView = useCallback(() => {
+    engineRef.current?.reset_camera();
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+      if (typing) return;
+
+      if (e.code === "KeyV" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        setTool("select");
+      }
+      if (e.code === "KeyH" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        setTool("pan");
+      }
       if (e.code === "KeyR" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
         e.preventDefault();
         createRect();
@@ -65,20 +92,41 @@ export function App() {
         e.preventDefault();
         createFrame();
       }
+      if (e.code === "Digit0" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        resetView();
+      }
+      if (e.code === "Equal" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        zoomIn();
+      }
+      if (e.code === "Minus" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        zoomOut();
+      }
       if (e.code === "Escape") {
-        engineRef.current?.clear_selection();
+        if (tool === "pan") {
+          setTool("select");
+        } else {
+          engineRef.current?.clear_selection();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [createRect, createFrame]);
+  }, [createRect, createFrame, resetView, zoomIn, zoomOut, tool]);
 
   return (
     <div className="app">
       <Toolbar
         zoom={snapshot?.zoom ?? 1}
+        tool={tool}
+        onToolChange={setTool}
         onAddRectangle={createRect}
         onAddFrame={createFrame}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onResetView={resetView}
         ready={ready}
       />
       <div className="workspace">
@@ -93,6 +141,7 @@ export function App() {
           }
         />
         <CanvasView
+          tool={tool}
           onReady={onReady}
           onSnapshot={onSnapshot}
           onError={onError}

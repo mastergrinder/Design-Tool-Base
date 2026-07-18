@@ -26,7 +26,7 @@ pub struct ShaderPipelines {
 }
 
 impl ShaderPipelines {
-    pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat) -> Self {
+    pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, sample_count: u32) -> Self {
         let sources = shader_lib::compiled_sources();
         let metas: Vec<ShaderMeta> = sources.iter().map(|(m, _)| *m).collect();
 
@@ -118,7 +118,11 @@ impl ShaderPipelines {
                     ..Default::default()
                 },
                 depth_stencil: None,
-                multisample: wgpu::MultisampleState::default(),
+                multisample: wgpu::MultisampleState {
+                    count: sample_count,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
+                },
                 multiview: None,
                 cache: None,
             });
@@ -153,7 +157,11 @@ impl ShaderPipelines {
                 ..Default::default()
             },
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: sample_count,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
             multiview: None,
             cache: None,
         });

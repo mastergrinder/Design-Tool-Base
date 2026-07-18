@@ -713,12 +713,15 @@ fn fs_main(in: FragIn) -> @location(0) vec4<f32> {{
     let half = size * 0.5;
     let p = in.local - half;
     let d = max(abs(p.x) - half.x, abs(p.y) - half.y);
-    let thickness = 1.5 / max(view.viewport.z, 0.001);
+    let zoom = max(view.viewport.z, 0.001);
+    let t_blue = 1.7 / zoom;
+    let t_white = 3.1 / zoom;
     let aa = max(fwidth(d), 0.001);
-    let outer = 1.0 - smoothstep(-aa, aa, d);
-    let inner = 1.0 - smoothstep(-aa, aa, d + thickness);
-    let edge = clamp(outer - inner, 0.0, 1.0);
-    return vec4<f32>(0.15, 0.45, 0.95, edge);
+    let blue = smoothstep(-aa, aa, d) * (1.0 - smoothstep(-aa, aa, d - t_blue));
+    let white = smoothstep(-aa, aa, d - t_blue) * (1.0 - smoothstep(-aa, aa, d - t_white));
+    var out_c = vec4<f32>(1.0, 1.0, 1.0, white * 0.88);
+    out_c = out_c * (1.0 - blue) + vec4<f32>(0.25, 0.48, 1.0, 0.96) * blue;
+    return out_c;
 }}
 "
     )

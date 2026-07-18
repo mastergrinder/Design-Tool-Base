@@ -14,7 +14,7 @@ pub struct RectPipeline {
 }
 
 impl RectPipeline {
-    pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat) -> Self {
+    pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, sample_count: u32) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("rect_shader"),
             source: wgpu::ShaderSource::Wgsl(RECT_WGSL.into()),
@@ -97,7 +97,11 @@ impl RectPipeline {
                 ..Default::default()
             },
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: sample_count,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
             multiview: None,
             cache: None,
         });
@@ -126,7 +130,11 @@ impl RectPipeline {
                 ..Default::default()
             },
             depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: sample_count,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
             multiview: None,
             cache: None,
         });
@@ -277,11 +285,15 @@ fn fs_outline(in: VertexOutput) -> @location(0) vec4<f32> {
     let p = in.local - half;
     let r = min(in.radius, min(half.x, half.y));
     let d = sd_rounded_box(p, half, r);
-    let thickness = 1.5 / max(view.viewport.z, 0.001);
+    let zoom = max(view.viewport.z, 0.001);
+    let t_blue = 1.7 / zoom;
+    let t_white = 3.1 / zoom;
     let aa = max(fwidth(d), 0.001);
-    let outer = 1.0 - smoothstep(-aa, aa, d);
-    let inner = 1.0 - smoothstep(-aa, aa, d + thickness);
-    let edge = clamp(outer - inner, 0.0, 1.0);
-    return vec4<f32>(0.15, 0.45, 0.95, edge);
+    // Outside rings: blue stroke + soft white halo (Paper/Figma-like).
+    let blue = smoothstep(-aa, aa, d) * (1.0 - smoothstep(-aa, aa, d - t_blue));
+    let white = smoothstep(-aa, aa, d - t_blue) * (1.0 - smoothstep(-aa, aa, d - t_white));
+    var out_c = vec4<f32>(1.0, 1.0, 1.0, white * 0.88);
+    out_c = out_c * (1.0 - blue) + vec4<f32>(0.25, 0.48, 1.0, 0.96) * blue;
+    return out_c;
 }
 "#;

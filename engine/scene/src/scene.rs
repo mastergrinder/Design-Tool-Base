@@ -122,8 +122,8 @@ impl Scene {
             LayerType::Frame,
             position,
             size,
-            Color::rgba(0.96, 0.96, 0.96, 1.0),
-            0.0,
+            Color::rgba(1.0, 1.0, 1.0, 1.0),
+            4.0,
             u32::MAX,
         )
     }
